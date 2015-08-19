@@ -68,6 +68,7 @@ class SaleWorkflowProcess(models.Model):
     )
     validate_invoice = fields.Boolean(string='Validate Invoice')
     validate_picking = fields.Boolean(string='Confirm and Close Picking')
+    reserve_picking = fields.Boolean(string='Confirm Picking')
     invoice_date_is_order_date = fields.Boolean(
         string='Force Invoice Date',
         help="When checked, the invoice date will be "

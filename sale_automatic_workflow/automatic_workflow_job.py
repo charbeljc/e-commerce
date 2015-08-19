@@ -60,9 +60,11 @@ def commit(cr):
     Warning: using this method, the exceptions are logged then discarded.
     """
     try:
+        cr.execute('SAVEPOINT auto_workflow_job')
         yield
     except Exception:
-        cr.rollback()
+        #cr.rollback()
+        cr.execute('ROLLBACK TO SAVEPOINT auto_workflow_job')
         _logger.exception('Error during an automatic workflow action.')
     else:
         cr.commit()
@@ -83,7 +85,7 @@ class AutomaticWorkflowJob(models.Model):
     def _validate_sale_orders(self):
         sale_obj = self.env['sale.order']
         sales = sale_obj.search(self._get_domain_for_sale_validation())
-        _logger.debug('Sale Orders to validate: %s', sales)
+        _logger.error('Sale Orders to validate: %s', sales)
         for sale in sales:
             with commit(self.env.cr):
                 sale.action_button_confirm()
@@ -95,10 +97,25 @@ class AutomaticWorkflowJob(models.Model):
             [('state', 'in', ['draft']),
              ('workflow_process_id.validate_invoice', '=', True)],
         )
-        _logger.debug('Invoices to validate: %s', invoices)
+        _logger.error('Invoices to validate: %s', invoices)
         for invoice in invoices:
             with commit(self.env.cr):
                 invoice.signal_workflow('invoice_open')
+
+    @api.model
+    def _check_picking_ready(self):
+        import ipdb
+        ipdb.set_trace()
+        picking_obj = self.env['stock.picking']
+        pickings = picking_obj.search(
+            [('state', 'in', ['waiting', 'confirmed']),
+             ('workflow_process_id.reserve_picking', '=', True)
+             ]
+        )
+        _logger.error('Pickings to check: %s', pickings)
+        if pickings:
+            with commit(self.env.cr):
+                pickings.recheck_availability()
 
     @api.model
     def _validate_pickings(self):
@@ -107,7 +124,7 @@ class AutomaticWorkflowJob(models.Model):
             [('state', 'in', ['draft', 'confirmed', 'assigned']),
              ('workflow_process_id.validate_picking', '=', True)],
         )
-        _logger.debug('Pickings to validate: %s', pickings)
+        _logger.error('Pickings to validate: %s', pickings)
         if pickings:
             with commit(self.env.cr):
                 pickings.validate_picking()
@@ -118,5 +135,6 @@ class AutomaticWorkflowJob(models.Model):
 
         self._validate_sale_orders()
         self._validate_invoices()
+        self._check_picking_ready()
         self._validate_pickings()
         return True

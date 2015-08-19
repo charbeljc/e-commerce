@@ -24,6 +24,7 @@
                     </group>
                     <group string="Workflow Options">
                         <field name="validate_order"/>
+                        <field name="reserve_picking"/>
                         <field name="validate_picking"/>
                         <field name="create_invoice_on" attrs="{'readonly': [('order_policy', '!=', 'manual')]}" />
                         <field name="validate_invoice"/>
@@ -44,6 +45,7 @@
                     <field name="order_policy"/>
                     <field name="invoice_quantity"/>
                     <field name="validate_order"/>
+                    <field name="reserve_picking"/>
                     <field name="validate_picking"/>
                     <field name="create_invoice_on" />
                     <field name="validate_invoice"/>
